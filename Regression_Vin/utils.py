@@ -91,3 +91,36 @@ def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "soumissio
     submission_data = pd.DataFrame({'wine_ID': index_list, 'target': prediction})
     submission_data.to_csv(name_file, index=False)
     return submission_data
+
+
+def moyenne_submission(liste_soumission,path_result = "Soumissions/mean_submission.csv"):
+    
+
+    # Créez une liste vide pour stocker les DataFrames de chaque fichier
+    dataframes = []
+
+    # Lisez chaque fichier CSV et ajoutez-le à la liste des DataFrames
+    for file in liste_soumission:
+        df = pd.read_csv(file)
+        dataframes.append(df)
+
+    # Concaténez les DataFrames en un seul
+    combined_df = pd.concat(dataframes, axis=1)
+    combined_df = combined_df.T.drop_duplicates().T
+    # Calculez la moyenne le long de l'axe des colonnes (c'est-à-dire pour chaque ligne)
+    colonnes_a_moyenner = ['target']
+
+    row_averages = combined_df[colonnes_a_moyenner].mean(axis=1)
+
+    # Ajoutez les moyennes en tant que nouvelle colonne à l'un des DataFrames
+    # Supprimes les colonnes "target"
+    if 'target' in combined_df.columns:
+        combined_df = combined_df.drop(columns=['target'])
+
+    combined_df['target'] = row_averages
+    combined_df["wine_ID"] = combined_df['wine_ID'].astype(int)
+
+    # Enregistrez le DataFrame résultant dans un nouveau fichier CSV
+    combined_df.to_csv(path_result, index=False)
+
+    pass
