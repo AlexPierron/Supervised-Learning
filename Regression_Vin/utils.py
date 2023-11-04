@@ -21,7 +21,6 @@ data_train = pd.read_csv("Data\wine_train.csv", index_col=0)
 X = data_train.drop("target",axis=1)
 Y = data_train.target
 
-essai = 2
 
 data_test = pd.read_csv("Data\wine_test.csv", index_col=0)
 
