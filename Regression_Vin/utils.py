@@ -5,6 +5,7 @@ import os
 import joblib
 from tqdm import tqdm
 import copy
+
 from sklearn.model_selection import ParameterGrid
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
@@ -221,9 +222,7 @@ def mean_submission(liste_soumission,path_result = "Soumissions/mean_submission.
     Returns:
         None
     """
-
     dataframes = []
-
     for file in liste_soumission:
         df = pd.read_csv(file)
         dataframes.append(df)
@@ -231,7 +230,6 @@ def mean_submission(liste_soumission,path_result = "Soumissions/mean_submission.
     combined_df = pd.concat(dataframes, axis=1)
     combined_df = combined_df.T.drop_duplicates().T
     columns_average = ['target']
-
     row_averages = combined_df[columns_average].mean(axis=1)
 
     if 'target' in combined_df.columns:
@@ -239,11 +237,9 @@ def mean_submission(liste_soumission,path_result = "Soumissions/mean_submission.
 
     combined_df['target'] = row_averages
     combined_df["wine_ID"] = combined_df['wine_ID'].astype(int)
-
     output_folder = os.path.dirname(path_result)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-
     combined_df.to_csv(path_result, index=False)
 
     pass
