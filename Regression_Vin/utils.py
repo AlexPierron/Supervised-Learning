@@ -249,3 +249,9 @@ def mean_submission(liste_soumission,path_result = "Soumissions/mean_submission.
     combined_df.to_csv(path_result, index=False)
 
     pass
+
+def save_model(model,path_to_save="Archives_Model/Default_best_model.pkl"):
+    output_folder = os.path.dirname(path_to_save)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    joblib.dump(model, path_to_save)

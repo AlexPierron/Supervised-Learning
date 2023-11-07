@@ -12,8 +12,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
+
 from sklearn.metrics import f1_score
 
 import warnings
@@ -220,3 +223,10 @@ def submission(model,X_test=X_np_test,X_train=X_np_train,Y_train=Y_np_train,name
 
     submission_data.to_csv(name_file, index=False)
     return submission_data
+
+
+def save_model(model,path_to_save="Archives_Model/Default_best_model.pkl"):
+    output_folder = os.path.dirname(path_to_save)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    joblib.dump(model, path_to_save)
