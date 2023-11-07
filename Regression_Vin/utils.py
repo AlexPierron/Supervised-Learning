@@ -12,11 +12,17 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
-from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingRegressor
+
+
+nb_cpu = os.cpu_count()
+random_seed = 42
+
 
 data_train = pd.read_csv("Data\wine_train.csv", index_col=0)
 X = data_train.drop("target",axis=1)

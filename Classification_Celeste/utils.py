@@ -19,7 +19,7 @@ from sklearn.metrics import f1_score
 import warnings
 warnings.filterwarnings("ignore")
 
-
+nb_cpu = os.cpu_count()
 data_train = pd.read_csv("Data\stars_train.csv", index_col=0)
 
 x_np_train = np.genfromtxt("Data/stars_train.csv", delimiter=',', skip_header=1)
