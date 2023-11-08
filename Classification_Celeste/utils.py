@@ -126,7 +126,7 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         random_start: Random seed for initialization.
         display_boxplot: Flag to display a box plot of the evaluation results.
         saving_path: Path to save the best model, or None if not saving.
-        scikit_model: True if using a scikit-learn compatible model, False if it a PyTorch model.
+        scikit_model: True if using a scikit-learn compatible model, False if it is a PyTorch model.
 
     Returns:
         best_model: The best model with the optimal hyperparameters.
