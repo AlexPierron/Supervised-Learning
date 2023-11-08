@@ -18,6 +18,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn import svm
+
 
 
 nb_cpu = os.cpu_count()
@@ -172,6 +174,15 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         plt.boxplot(best_model_scores, labels=["r2_score", "rmse"])
         plt.title(f"Best Model: {best_model} with Hyperparameters: {best_params}")
         plt.grid()
+        #Saving the plot
+        if saving_path is not None:
+            output_folder = os.path.dirname(saving_path)
+            if not os.path.exists(output_folder):
+                os.makedirs(output_folder)
+            
+            boxplot_filename = os.path.join(output_folder, "boxplot.png")
+            plt.savefig(boxplot_filename)
+
         plt.show()
 
     print("Best hyperparameters:", best_params)
