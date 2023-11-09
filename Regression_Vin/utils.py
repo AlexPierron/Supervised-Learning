@@ -197,16 +197,17 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
     return best_model, best_params, best_score, all_results
     
 
-def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "soumission.csv"):
+def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "Submissions/soumission.csv",pretrained=False):
     """
-    Generate a submission file using a trained regression model.
+    Generate a submission file using the desired model.
 
     Args:
         model: A trained regression model.
         X_test: Test dataset features (default: data_test).
         X_train: Training dataset features.
         Y_train: Training dataset target variable.
-        name_file: Name of the output submission file (default: "submission.csv").
+        name_file: Name of the output submission file (default: "Submissions/submission.csv").
+        pretrained: Whether or not the model is already trained.
 
     Returns:
         submission_data: A DataFrame containing the wine_ID and predicted target.
@@ -215,7 +216,8 @@ def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "soumissio
     scaler = StandardScaler()
     scaler.fit(X_train)
     index_list = X_test.index
-    model = train_and_eval(model,X_train,Y_train,full_train=True)
+    if not pretrained:
+        model = train_and_eval(model,X_train,Y_train,full_train=True)
     X_test = pd.DataFrame(scaler.transform(X_test),columns = X_test.columns)
     prediction = model.predict(X_test)
     submission_data = pd.DataFrame({'wine_ID': index_list, 'target': prediction})

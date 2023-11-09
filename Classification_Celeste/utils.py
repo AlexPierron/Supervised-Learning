@@ -11,7 +11,6 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -23,15 +22,20 @@ import warnings
 warnings.filterwarnings("ignore")
 
 nb_cpu = os.cpu_count()
-data_train = pd.read_csv("Data\stars_train.csv", index_col=0)
+data_train = pd.read_csv("Data\stars_train_new.csv", index_col=0)
+X = data_train.drop("label",axis=1)
+Y = data_train.label
 
-x_np_train = np.genfromtxt("Data/stars_train.csv", delimiter=',', skip_header=1)
+data_test = pd.read_csv("Data\stars_test_new.csv", index_col=0)
+
+
+x_np_train = np.genfromtxt("Data/stars_train_new.csv", delimiter=',', skip_header=1)
 obj_ID = x_np_train[:,0]
 Y = x_np_train[:,-1]
 Y_np_train = Y.astype(int)
 X_np_train = x_np_train[:,1:9]
 
-x_np_test = np.genfromtxt("Data/stars_test.csv", delimiter=',', skip_header=1)
+x_np_test = np.genfromtxt("Data/stars_test_new.csv", delimiter=',', skip_header=1)
 obj_ID_test = x_np_test[:,0]
 X_np_test = x_np_test[:,1:]
 
@@ -193,9 +197,43 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
     return best_model, best_params, best_score, all_results
 
 
-
-def submission(model,X_test=X_np_test,X_train=X_np_train,Y_train=Y_np_train,name_file = "soumission.csv"):
+def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "Submissions/soumission.csv",pretrained=False):
     """
+    Generate a submission file using the desired model.
+
+    Args:
+        model: A trained regression model.
+        X_test: Test dataset features (default: data_test).
+        X_train: Training dataset features.
+        Y_train: Training dataset target variable.
+        name_file: Name of the output submission file (default: "submission.csv").
+        pretrained: Whether or not the model is already trained
+
+    Returns:
+        submission_data: A DataFrame containing the wine_ID and predicted target.
+    """
+
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+    index_list = X_test.index
+    if not pretrained:
+        model = train_and_eval(model,X_train,Y_train,full_train=True)[0]
+    X_test = pd.DataFrame(scaler.transform(X_test),columns = X_test.columns)
+    prediction = model.predict(X_test)
+    submission_data = pd.DataFrame({'obj_ID': index_list, 'label': prediction})
+
+    output_folder = os.path.dirname(name_file)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    submission_data.to_csv(name_file, index=False)
+    return submission_data
+
+
+"""
+def submission(model,X_test=x_np_test,X_train=X_np_train,Y_train=Y_np_train,name_file = "soumission.csv"):
+    """
+"""
     Generate a submission file using a trained regression model.
 
     Args:
@@ -207,15 +245,17 @@ def submission(model,X_test=X_np_test,X_train=X_np_train,Y_train=Y_np_train,name
 
     Returns:
         submission_data: A DataFrame containing the wine_ID and predicted target.
-    """
 
+    """
+"""
     scaler = StandardScaler()
     scaler.fit(X_train)
-    index_list = X_test.index
+    index_list = X_test[:,0]
+    X_test = x_np_test[:,1:]
     model = train_and_eval(model,X_train,Y_train,full_train=True)
     X_test = pd.DataFrame(scaler.transform(X_test),columns = X_test.columns)
     prediction = model.predict(X_test)
-    submission_data = pd.DataFrame({'wine_ID': index_list, 'target': prediction})
+    submission_data = pd.DataFrame({'wine_ID':index_list , 'target': prediction})
 
     output_folder = os.path.dirname(name_file)
     if not os.path.exists(output_folder):
@@ -223,7 +263,7 @@ def submission(model,X_test=X_np_test,X_train=X_np_train,Y_train=Y_np_train,name
 
     submission_data.to_csv(name_file, index=False)
     return submission_data
-
+"""
 
 def save_model(model,path_to_save="Archives_Model/Default_best_model.pkl"):
     output_folder = os.path.dirname(path_to_save)
