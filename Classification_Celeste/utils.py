@@ -21,13 +21,14 @@ from sklearn.metrics import f1_score
 import warnings
 warnings.filterwarnings("ignore")
 
+random_seed = 42 #Manage the randomness inside the models
+
 nb_cpu = os.cpu_count()
 data_train = pd.read_csv("Data\stars_train_new.csv", index_col=0)
 X = data_train.drop("label",axis=1)
 Y = data_train.label
 
 data_test = pd.read_csv("Data\stars_test_new.csv", index_col=0)
-
 
 x_np_train = np.genfromtxt("Data/stars_train_new.csv", delimiter=',', skip_header=1)
 obj_ID = x_np_train[:,0]
