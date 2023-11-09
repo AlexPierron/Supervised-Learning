@@ -198,7 +198,7 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
     return best_model, best_params, best_score, all_results
 
 
-def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "soumission.csv",pretrained=False):
+def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "Submissions/soumission.csv",pretrained=False):
     """
     Generate a submission file using the desired model.
 
