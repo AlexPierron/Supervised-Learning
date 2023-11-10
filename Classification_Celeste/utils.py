@@ -6,105 +6,103 @@ import os
 import joblib
 from tqdm import tqdm
 import copy
-
-from sklearn.model_selection import ParameterGrid
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
-from sklearn.model_selection import GridSearchCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingClassifier
-
-from sklearn.metrics import f1_score
-
 import warnings
 warnings.filterwarnings("ignore")
 
-random_seed = 42 #Manage the randomness inside the models
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import r2_score
+from sklearn.metrics import f1_score
+
 
 nb_cpu = os.cpu_count()
-data_train = pd.read_csv("Data\stars_train_new.csv", index_col=0)
+random_seed = 42 #Controls the randomness when using scikit-learn models. Change this value to change the random seed.
+random_starting_point = 42 # Controls the randomness for splitting the dataset between train and test. Change this value to change the random seed.
+training_data_path = "Data\stars_train_new.csv" # !!!!! Replace this value with your own path to the train set !!!!
+testing_data_path = "Data\stars_test_new.csv"   # !!!!! Replace this value with your own path to the test set !!!!
+
+data_train = pd.read_csv(training_data_path, index_col=0)
+data_test = pd.read_csv(testing_data_path, index_col=0)
 X = data_train.drop("label",axis=1)
 Y = data_train.label
 
-data_test = pd.read_csv("Data\stars_test_new.csv", index_col=0)
-
-x_np_train = np.genfromtxt("Data/stars_train_new.csv", delimiter=',', skip_header=1)
+"""
+x_np_train = np.genfromtxt(training_data_path, delimiter=',', skip_header=1)
 obj_ID = x_np_train[:,0]
 Y = x_np_train[:,-1]
 Y_np_train = Y.astype(int)
 X_np_train = x_np_train[:,1:9]
 
-x_np_test = np.genfromtxt("Data/stars_test_new.csv", delimiter=',', skip_header=1)
+x_np_test = np.genfromtxt(testing_data_path, delimiter=',', skip_header=1)
 obj_ID_test = x_np_test[:,0]
 X_np_test = x_np_test[:,1:]
+"""
 
 
-def train_and_eval(model, X, Y, random_state=0,full_train = False,test_size=0.15):
-    '''
-    Arguments :
-        - model (instance de modèle de régression scikit-learn)
-        - X : covariables
-        - Y : variable à prédire
-        - random_state : seed pour l'initialisation du générateur aléatoire
-        - full_train : si on veut faire un entrainement avec tout le jeu de données ou pas.
-    '''
 
+def train_and_eval(model, X, Y, test_size = 0.15, random_state = random_starting_point, full_train = False):
+    """
+    Train and evaluate a scikit-learn regression model.
+
+    Args:
+        model: An instance of a scikit-learn regression model.
+        X: Covariates (features).
+        Y: Target variable to predict.
+        test_size : the proportion of data in the validation set.
+        random_state: Seed for the random number generator.
+        full_train: Flag indicating whether to train the model on the full dataset(default: False).
+
+    Returns:
+        If 'full_train' is False:
+        X_result: Predicted values for the test set.
+        Y_test: Actual target values for the test set.
+        score: the R^2 and F1 score.
+    """
     if not full_train:
         # Train test split
-        X_train, X_test, Y_train, Y_test = train_test_split(X,Y,test_size=test_size,random_state = random_state if random_state !=0 else None)
-        # Normalisation
+        X_train, X_test, Y_train, Y_test = train_test_split( X, Y, test_size = test_size,
+                                                            random_state = random_state if random_state !=0 else None)
+        # Normalization
         scaler = StandardScaler()
         scaler.fit(X_train)
         X_train_scaled,X_test_scaled = scaler.transform(X_train),scaler.transform(X_test)
-
-        # Entraînement du modèle
+        # Training the model
         model.fit(X_train_scaled,Y_train)
         X_result =  model.predict(X_test_scaled)
         # Evaluation : r2 score 
         score =  [r2_score(Y_test, X_result ),f1_score(Y_test,X_result,average="weighted")]
-
         return X_result,Y_test,score
 
     else:
         scaler = StandardScaler()
         scaler.fit(X)
         X_used = scaler.transform(X)
-        
-        # Entraînement du modèle
         model.fit(X_used,Y)
-        
         return model,scaler
     pass
 
 
-"""
-def submission(model,X_test = X_np_test,
-               X_train = X_np_train, Y_train = Y_np_train,
-               name_file = "soumission.csv"):
-    
-    model,scaler = train_and_eval(model, X_train, Y_train, full_train=True)
-    X_test = scaler.transform(X_test)
-    prediction = model.predict(X_test)
-    submission_data = pd.DataFrame({'obj_ID': obj_ID_test , 'label': prediction})
-    submission_data.to_csv(name_file, index=False)
-
-    return submission_data
-"""
-
-def multi_test(model,X = X_np_train,
-               Y = Y_np_train,n = 25, test_size = 0.15,
-               random_start= 0,display_boxplot=True):
+def multi_test(model,X = X,
+               Y = Y,n = 25, test_size = 0.15,
+               random_start= random_starting_point,display_boxplot=True):
     '''
     Arguments :
-        - model (instance de modèle de régression scikit-learn)
-        - X : covariables
-        - Y : variable à prédire
-        - n : nombre de modèle à générer
-        - display_boxplot : si on veut afficher le boxplot
+        - model (scikit learn model)
+        - X : features
+        - Y : target
+        - n : number of try for each model
+        - random_start: controls the randomness for the train_test_split.
+        - test_size : the proportion of data in the test set.
+        - display_boxplot : whether or not you want the boxplot for the distribution of the scores.
     '''
-    all_scores = [train_and_eval(model,X,Y,random_state=k,test_size=test_size)[2] for k in range(random_start,random_start+n)]
+    all_scores = [train_and_eval(model,X,Y,random_state=k, test_size = test_size)[2] for k in range(random_start,random_start+n)]
     scores_r2 = [all_scores[i][0] for i in range(len(all_scores))]
     scores_f1 = [all_scores[i][1] for i in range(len(all_scores))]
     all_scores = [scores_r2,scores_f1]
@@ -114,11 +112,11 @@ def multi_test(model,X = X_np_train,
         plt.title(f"Result after training {n} {model} with different random_state")
         plt.grid()
         plt.show()
-        
     return all_scores
 
-def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxplot=False,
-                saving_path=None, scikit_model=True):
+def grid_search(model, X, Y, hyperparameters, test_size = 0.15, n = 25, 
+                random_start = random_starting_point, display_boxplot = False,
+                saving_path = None, scikit_model = True):
     """
     Perform grid search with cross-validation to find the best hyperparameters for a regression model.
 
@@ -127,6 +125,7 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         X: Features (covariates) for regression.
         Y: Target variable to predict.
         hyperparameters: Dictionary of hyperparameters and their possible values for grid search.
+        test_size: proportion of data in the validation set. 
         n: Number of estimators.
         random_start: Random seed for initialization.
         display_boxplot: Flag to display a box plot of the evaluation results.
@@ -148,7 +147,8 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         for params in tqdm(ParameterGrid(hyperparameters), desc="Grid Search Progress"):
             current_model = model.set_params(**params)
 
-            scores = multi_test(current_model, X, Y, n=n, random_start=random_start, display_boxplot=False)
+            scores = multi_test(current_model, X, Y, test_size = test_size, n = n, 
+                                random_start = random_start, display_boxplot = False)
             current_f1_score = np.array(scores[1])
 
             if best_score is None or np.mean(current_f1_score) > best_score:
@@ -166,7 +166,7 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         for params in tqdm(ParameterGrid(hyperparameters), desc="Grid Search Progress"):
             current_model = model(**params)
 
-            scores = multi_test(current_model, X, Y, n=n, random_start=random_start, display_boxplot=False)
+            scores = multi_test(current_model, X, Y,test_size = test_size, n=n, random_start=random_start, display_boxplot=False)
             current_f1_score = np.array(scores[0])
 
             if best_score is None or np.mean(current_f1_score) > best_score:
@@ -231,40 +231,6 @@ def submission(model,X_test=data_test,X_train=X,Y_train=Y,name_file = "Submissio
     return submission_data
 
 
-"""
-def submission(model,X_test=x_np_test,X_train=X_np_train,Y_train=Y_np_train,name_file = "soumission.csv"):
-    """
-"""
-    Generate a submission file using a trained regression model.
-
-    Args:
-        model: A trained regression model.
-        X_test: Test dataset features (default: data_test).
-        X_train: Training dataset features.
-        Y_train: Training dataset target variable.
-        name_file: Name of the output submission file (default: "submission.csv").
-
-    Returns:
-        submission_data: A DataFrame containing the wine_ID and predicted target.
-
-    """
-"""
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    index_list = X_test[:,0]
-    X_test = x_np_test[:,1:]
-    model = train_and_eval(model,X_train,Y_train,full_train=True)
-    X_test = pd.DataFrame(scaler.transform(X_test),columns = X_test.columns)
-    prediction = model.predict(X_test)
-    submission_data = pd.DataFrame({'wine_ID':index_list , 'target': prediction})
-
-    output_folder = os.path.dirname(name_file)
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
-    submission_data.to_csv(name_file, index=False)
-    return submission_data
-"""
 
 def save_model(model,path_to_save="Archives_Model/Default_best_model.pkl"):
     output_folder = os.path.dirname(path_to_save)
