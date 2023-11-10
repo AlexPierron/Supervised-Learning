@@ -1,40 +1,42 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import joblib
 from tqdm import tqdm
 import copy
 
-from sklearn.model_selection import ParameterGrid
-import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
-from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import ParameterGrid
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import GradientBoostingRegressor
 from sklearn import svm
-
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
 
 
 nb_cpu = os.cpu_count()
-random_seed = 42
+random_seed = 42 #Controls the randomness when using scikit-learn models. Change this value to change the random seed.
+random_starting_point = 42 # Controls the randomness for splitting the dataset between train and test. Change this value to change the random seed.
+training_data_path = "Data\wine_train.csv"      # !!!!! Replace this value with your own path to the train set !!!!
+testing_data_path = "Data\wine_test.csv"        # !!!!! Replace this value with your own path to the test set !!!!
 
-
-data_train = pd.read_csv("Data\wine_train.csv", index_col=0)
+data_train = pd.read_csv(training_data_path, index_col=0)
 X = data_train.drop("target",axis=1)
 Y = data_train.target
 
 
-data_test = pd.read_csv("Data\wine_test.csv", index_col=0)
+data_test = pd.read_csv(testing_data_path, index_col=0)
 
 
-def train_and_eval(model, X, Y, random_state=0,full_train = False):
+def train_and_eval(model, X, Y,test_size=0.15, random_state= random_starting_point,full_train = False):
     """
     Train and evaluate a scikit-learn regression model.
 
@@ -42,6 +44,7 @@ def train_and_eval(model, X, Y, random_state=0,full_train = False):
         model: An instance of a scikit-learn regression model.
         X: Covariates (features).
         Y: Target variable to predict.
+        test_size : the proportion of data in the validation set.
         random_state: Seed for the random number generator (default: 0).
         full_train: Flag indicating whether to train the model on the full dataset(default: False).
 
@@ -54,7 +57,8 @@ def train_and_eval(model, X, Y, random_state=0,full_train = False):
 
     if not full_train:
         # Train test split
-        X_train, X_test, Y_train, Y_test = train_test_split(X,Y,test_size=0.15,random_state = random_state if random_state !=0 else None)
+        X_train, X_test, Y_train, Y_test = train_test_split( X, Y, test_size = test_size,
+                                                            random_state = random_state if random_state !=0 else None)
         # Normalization
         scaler = StandardScaler()
         scaler.fit(X_train)
@@ -78,7 +82,8 @@ def train_and_eval(model, X, Y, random_state=0,full_train = False):
         return model
     pass
 
-def multi_test(model,X,Y,n = 25,random_start=0,display_boxplot=True):
+def multi_test( model, X, Y, test_size = 0.15, n = 25,
+               random_start = random_starting_point, display_boxplot = True):
     """
     Train and evaluate a scikit-learn regression model multiple times with different random states.
 
@@ -86,6 +91,7 @@ def multi_test(model,X,Y,n = 25,random_start=0,display_boxplot=True):
         model: An instance of a scikit-learn regression model.
         X: Covariates (features).
         Y: Target variable to predict.
+        test_size : the proportion of data in the validation set.
         n: Number of models to generate and test (default: 25).
         random_start: Seed for the random number generator (default: 0).
         display_boxplot: Flag indicating whether to display a box plot of the evaluation results (default: True).
@@ -93,7 +99,7 @@ def multi_test(model,X,Y,n = 25,random_start=0,display_boxplot=True):
     Returns:
         all_scores: Evaluation scores for each model, including R^2 scores and RMSE.
     """
-    all_scores = [train_and_eval(model,X,Y,random_state=k)[2] for k in range(random_start,random_start+n)]
+    all_scores = [train_and_eval(model,X,Y,test_size=test_size,random_state=k)[2] for k in range(random_start,random_start+n)]
     scores_r2 = [all_scores[i][0] for i in range(len(all_scores))]
     scores_rmse = [all_scores[i][1] for i in range(len(all_scores))]
     all_scores = [scores_r2,scores_rmse]
@@ -107,8 +113,9 @@ def multi_test(model,X,Y,n = 25,random_start=0,display_boxplot=True):
     return all_scores
 
 
-def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxplot=False,
-                saving_path=None, scikit_model=True):
+def grid_search(model, X, Y, hyperparameters,
+                test_size = 0.15, n = 25, random_start = random_starting_point, display_boxplot = False,
+                saving_path = None, scikit_model = True):
     """
     Perform grid search with cross-validation to find the best hyperparameters for a regression model.
 
@@ -117,6 +124,7 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         X: Features (covariates) for regression.
         Y: Target variable to predict.
         hyperparameters: Dictionary of hyperparameters and their possible values for grid search.
+        test_size : the proportion of data in the validation set.
         n: Number of estimators.
         random_start: Random seed for initialization.
         display_boxplot: Flag to display a box plot of the evaluation results.
@@ -138,7 +146,8 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         for params in tqdm(ParameterGrid(hyperparameters), desc="Grid Search Progress"):
             current_model = model.set_params(**params)
 
-            scores = multi_test(current_model, X, Y, n=n, random_start=random_start, display_boxplot=False)
+            scores = multi_test(current_model, X, Y, test_size = test_size,
+                                 n = n, random_start = random_start, display_boxplot = False)
             current_r2_score = np.array(scores[0])
 
             if best_score is None or np.mean(current_r2_score) > best_score:
@@ -156,7 +165,8 @@ def grid_search(model, X, Y, hyperparameters, n=25, random_start=0, display_boxp
         for params in tqdm(ParameterGrid(hyperparameters), desc="Grid Search Progress"):
             current_model = model(**params)
 
-            scores = multi_test(current_model, X, Y, n=n, random_start=random_start, display_boxplot=False)
+            scores = multi_test(current_model, X, Y, test_size = test_size,
+                                 n=n, random_start=random_start, display_boxplot=False)
             current_r2_score = np.array(scores[0])
 
             if best_score is None or np.mean(current_r2_score) > best_score:
