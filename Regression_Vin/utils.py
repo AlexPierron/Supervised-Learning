@@ -23,16 +23,16 @@ from sklearn.metrics import mean_squared_error
 
 
 nb_cpu = os.cpu_count()
+# PARAMETERS TO CHANGE: DATA PATHS AND RANDOM SEEDS
 random_seed = 42 #Controls the randomness when using scikit-learn models. Change this value to change the random seed.
 random_starting_point = 42 # Controls the randomness for splitting the dataset between train and test. Change this value to change the random seed.
 training_data_path = "Data\wine_train.csv"      # !!!!! Replace this value with your own path to the train set !!!!
 testing_data_path = "Data\wine_test.csv"        # !!!!! Replace this value with your own path to the test set !!!!
 
+
 data_train = pd.read_csv(training_data_path, index_col=0)
 X = data_train.drop("target",axis=1)
 Y = data_train.target
-
-
 data_test = pd.read_csv(testing_data_path, index_col=0)
 
 
@@ -57,7 +57,7 @@ def train_and_eval(model, X, Y,test_size=0.15, random_state= random_starting_poi
 
     if not full_train:
         # Train test split
-        X_train, X_test, Y_train, Y_test = train_test_split( X, Y, test_size = test_size,
+        X_train, X_test, Y_train, Y_test = train_test_split( X, Y, test_size = test_size,stratify = Y,
                                                             random_state = random_state if random_state !=0 else None)
         # Normalization
         scaler = StandardScaler()
@@ -99,7 +99,7 @@ def multi_test( model, X, Y, test_size = 0.15, n = 25,
     Returns:
         all_scores: Evaluation scores for each model, including R^2 scores and RMSE.
     """
-    all_scores = [train_and_eval(model,X,Y,test_size=test_size,random_state=k)[2] for k in range(random_start,random_start+n)]
+    all_scores = [train_and_eval(model,X,Y,test_size=test_size, random_state=k)[2] for k in range(random_start,random_start+n)]
     scores_r2 = [all_scores[i][0] for i in range(len(all_scores))]
     scores_rmse = [all_scores[i][1] for i in range(len(all_scores))]
     all_scores = [scores_r2,scores_rmse]

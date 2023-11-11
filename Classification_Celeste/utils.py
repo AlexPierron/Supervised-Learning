@@ -22,28 +22,17 @@ from sklearn.metrics import f1_score
 
 
 nb_cpu = os.cpu_count()
+# PARAMETERS TO CHANGE: DATA PATHS AND RANDOM SEEDS
 random_seed = 42 #Controls the randomness when using scikit-learn models. Change this value to change the random seed.
 random_starting_point = 42 # Controls the randomness for splitting the dataset between train and test. Change this value to change the random seed.
 training_data_path = "Data\stars_train_new.csv" # !!!!! Replace this value with your own path to the train set !!!!
 testing_data_path = "Data\stars_test_new.csv"   # !!!!! Replace this value with your own path to the test set !!!!
 
+
 data_train = pd.read_csv(training_data_path, index_col=0)
 data_test = pd.read_csv(testing_data_path, index_col=0)
 X = data_train.drop("label",axis=1)
 Y = data_train.label
-
-"""
-x_np_train = np.genfromtxt(training_data_path, delimiter=',', skip_header=1)
-obj_ID = x_np_train[:,0]
-Y = x_np_train[:,-1]
-Y_np_train = Y.astype(int)
-X_np_train = x_np_train[:,1:9]
-
-x_np_test = np.genfromtxt(testing_data_path, delimiter=',', skip_header=1)
-obj_ID_test = x_np_test[:,0]
-X_np_test = x_np_test[:,1:]
-"""
-
 
 
 def train_and_eval(model, X, Y, test_size = 0.15, random_state = random_starting_point, full_train = False):
@@ -66,7 +55,7 @@ def train_and_eval(model, X, Y, test_size = 0.15, random_state = random_starting
     """
     if not full_train:
         # Train test split
-        X_train, X_test, Y_train, Y_test = train_test_split( X, Y, test_size = test_size,
+        X_train, X_test, Y_train, Y_test = train_test_split( X, Y, test_size = test_size, stratify = Y,
                                                             random_state = random_state if random_state !=0 else None)
         # Normalization
         scaler = StandardScaler()
