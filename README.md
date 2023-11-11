@@ -6,6 +6,7 @@ To be able to run the codes and notebooks, you need to change a few lines of the
 The lines to be changed are indicated at the beginning of each utils.py file, just after the module imports.
 
 Here's the list of required python libraries:
+
     - numpy
     - pandas
     - scikit-learn (sklearn)
