@@ -155,7 +155,7 @@ def grid_search(model, X, Y, hyperparameters, test_size = 0.15, n = 25,
             current_model = model(**params)
 
             scores = multi_test(current_model, X, Y,test_size = test_size, n=n, random_start=random_start, display_boxplot=False)
-            current_f1_score = np.array(scores[0])
+            current_f1_score = np.array(scores[1])
 
             if best_score is None or np.mean(current_f1_score) > best_score:
                 best_score = np.mean(current_f1_score)
